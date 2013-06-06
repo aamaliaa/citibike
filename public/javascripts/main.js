@@ -53,7 +53,7 @@ function getPosition() {
 }
 
 function addMarkers() {
-	$.getJSON('http://dev.amaliaviti.com/citibike/stationData/current', function(data){
+	$.getJSON('http://dev.amaliaviti.com/citidata/current', function(data){
 	    $.each(data.stationBeanList, function(index, station){
 	    	if(station.statusValue != 'De-Registered' && station.statusValue != 'Planned'){
 		    	var icon;
