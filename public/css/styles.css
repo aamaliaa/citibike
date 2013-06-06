@@ -1,5 +1,14 @@
-html {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+h4 {
+  margin: 3px 0px; }
 
 #map-canvas {
   max-width: none; }
+
+.stationBubble dl {
+  text-transform: lowercase;
+  font-size: 12px; }
+  .stationBubble dl dt {
+    font-weight: bold; }
+  .stationBubble dl dd {
+    margin: 0;
+    padding-left: 10px; }

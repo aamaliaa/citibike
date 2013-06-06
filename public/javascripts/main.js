@@ -1,4 +1,7 @@
 var map;
+var infoWindow;
+var markersArray = [];
+var infoWindowsArray = [];
 
 function initialize() {
 	var mapDiv = document.getElementById('map-canvas');
@@ -6,6 +9,7 @@ function initialize() {
     $('#map-canvas').css("width", $(window).width()+"px");
     
     var position = getPosition();
+    google.maps.visualRefresh = true; // new gmaps style
     
 	map = new google.maps.Map(mapDiv, {
 	  center: new google.maps.LatLng(40.73492695, -73.99200509),
@@ -13,12 +17,17 @@ function initialize() {
   	  maxZoom: 18,
 	  minZoom: 13,
 	  mapTypeId: google.maps.MapTypeId.ROADMAP,
+	  mapTypeControl: false,
+	  streetViewControl: false,
 	  backgroundColor: '#ffffff'
 	});
 	
-	// BIKELAYER--Y U NO WORK?!
-	//var bikeLayer = new google.maps.BicyclingLayer();
-	//bikeLayer.setMap(map);
+	bikeLayer = new google.maps.BicyclingLayer();
+	bikeLayer.setMap(map);
+	
+	infoWindow = new google.maps.InfoWindow({
+		content: 'loading...'
+	});
 	
 	google.maps.event.addListenerOnce(map, 'tilesloaded', addMarkers);
 
@@ -46,9 +55,11 @@ function getPosition() {
 function addMarkers() {
 	$.getJSON('stationData/current', function(data){
 	    $.each(data.stationBeanList, function(index, station){
-	    	if(station.statusValue != 'De-Registered' || station.statusValue != 'Planned'){
+	    	if(station.statusValue != 'De-Registered' && station.statusValue != 'Planned'){
 		    	var icon;
 		    	var isEmpty = (station.availableBikes < 1) ? true : false;
+		    	
+				var html = "<div class='stationBubble'><h4>"+station.stationName+"</h4><p><dl><dt>status</dt><dd>"+station.statusValue+"</dd><dt>available bikes</dt><dd>"+station.availableBikes+"</dd><dt>available docks</dt><dd>"+station.availableDocks+"</dd><dt>total docks</dt><dd>"+station.totalDocks+"</dd></dl></p></div>";
 				
 				if(isEmpty){
 					icon = 'http://maps.google.com/mapfiles/ms/icons/red.png';
@@ -64,21 +75,20 @@ function addMarkers() {
 					position: latLng,
 					map: map,
 					labelClass: "labels",
-					animation: google.maps.Animation.DROP
-				});
-		
-				var infowindow = new google.maps.InfoWindow({
-					content: "<h4>"+station.stationName+"</h4><p><ul><li>status: "+station.statusValue+"</li><li>available bikes: "+station.availableBikes+"</li></ul></p>"
+					animation: google.maps.Animation.DROP,
+					html: html
 				});
 				
-				google.maps.event.addListener(marker, 'click', function() {
-					infowindow.open(map, this);
+				markersArray.push(marker);
+				
+				google.maps.event.addListener(marker, 'click', function() {					
+					infoWindow.setContent(this.html);
+					infoWindow.open(map, this);
 			    });
 		    }
 	    });
 	});
 }
-
 
 google.maps.event.addDomListener(window, 'load', initialize);
 
