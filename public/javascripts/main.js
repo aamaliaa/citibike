@@ -1,5 +1,13 @@
 var map;
 var infoWindow;
+var geocoder;
+var nycBounds;
+
+var origin,
+	originMarker,
+	destination,
+	destinationMarker;
+
 var markersArray = [];
 var infoWindowsArray = [];
 
@@ -8,9 +16,13 @@ function initialize() {
 	$('#map-canvas').css("height", $(window).height()+"px");
     $('#map-canvas').css("width", $(window).width()+"px");
     
-    var position = getPosition();
+    getPosition();
+    
+    nycBounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781));
+    
     google.maps.visualRefresh = true; // new gmaps style
     
+    geocoder = new google.maps.Geocoder();
 	map = new google.maps.Map(mapDiv, {
 	  center: new google.maps.LatLng(40.73492695, -73.99200509),
 	  zoom: 13,
@@ -40,8 +52,9 @@ function getPosition() {
 	}
 	
 	function success(position) {
-		map.setCenter(new google.maps.LatLng(position.coords.latitude, position.coords.longitude));
-		return true;
+		var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+		setOrigin(point);
+		return point;
 	}
 	
 	function error() {
@@ -87,6 +100,51 @@ function addMarkers() {
 			    });
 		    }
 	    });
+	});
+}
+
+function setOrigin(point){
+
+	if(originMarker) originMarker.setMap(null);
+	
+	origin = point;
+	
+	map.setCenter(point);
+	originMarker = new google.maps.Marker({
+		map: map,
+		position: point,
+		zIndex: 999
+	});
+	
+}
+
+function setDestination(){
+	var address = $('#destination').val();
+	geocoder.geocode({
+		'address': address,
+		'bounds': nycBounds,
+		'region': 'US'
+	}, function(results, status){
+		if (status == google.maps.GeocoderStatus.OK) {
+			
+			// if destination already exists on map, clear it
+			if(destinationMarker)
+				destinationMarker.setMap(null);
+			
+			// center point in viewport
+	        map.setCenter(results[0].geometry.location);
+	        
+	        // set marker
+			destinationMarker = new google.maps.Marker({
+				map: map,
+				position: results[0].geometry.location
+			});
+			
+			// set destination value
+			$('#destination').val(results[0].formatted_address);
+		} else{
+			console.log('Geocode not successful bc: '+status);
+		}
 	});
 }
 
