@@ -256,16 +256,34 @@ h4 {
  * height: 250px
  * +border-radius(3px) */
 #key {
-  background: #222222;
   position: absolute;
   top: 0;
   right: 0;
   min-height: 100%;
   width: 300px;
-  border-left: 3px solid #333333;
+  border-left: 2px solid #999999;
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box; }
+
+.stations, .stations svg {
+  position: absolute; }
+
+.stations svg {
+  width: 60px;
+  height: 20px;
+  padding-right: 100px;
+  font: 10px; }
+
+.stations circle {
+  fill: #40a136;
+  stroke: black;
+  stroke-width: 1.5px;
+  cursor: pointer; }
+  .stations circle.empty {
+    fill: #e74c3c; }
+  .stations circle.caution {
+    fill: #f1c40f; }
 
 .stationBubble {
   font-family: "Lato", Helvetica Neue, Helvetica, Arial, sans-serif; }

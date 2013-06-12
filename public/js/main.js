@@ -23,7 +23,7 @@ function initialize() {
     google.maps.visualRefresh = true; // new gmaps style
     
     geocoder = new google.maps.Geocoder();
-	map = new google.maps.Map(mapDiv, {
+	map = new google.maps.Map(d3.select(mapDiv).node(), {
 	  center: new google.maps.LatLng(40.73492695, -73.99200509),
 	  zoom: 13,
   	  maxZoom: 18,
@@ -66,7 +66,80 @@ function getPosition() {
 }
 
 function addMarkers() {
-	$.getJSON('http://dev.amaliaviti.com/citidata/current', function(data){
+	// d3 implementation
+	d3.json('sample.json', function(data){
+		var overlay = new google.maps.OverlayView();
+		
+		// add container when overlay is added to map
+		overlay.onAdd = function(){
+			var layer = d3.select(this.getPanes().overlayMouseTarget).append("div")
+				.attr("class", "stations");
+		
+			// draw each marker as separate SVG element
+			overlay.draw = function(){
+				var projection = this.getProjection(),
+					padding = 10;
+					
+				var marker = layer.selectAll("svg")
+					.data(d3.entries(data.stationBeanList))
+					.each(transform) // update existing markers
+					.enter().append("svg:svg")
+					.each(transform)
+					.attr("class", "marker");
+				
+				// add a circle
+				marker.append("svg:circle")
+					.attr("r", 4.5)
+					.attr("cx", padding)
+					.attr("cy", padding)
+					.each(stationCapacity)
+					.on("click", function(d,i){
+						$('#key .info').html("<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>");
+					});
+/*
+				
+				// add a label
+				marker.append("svg:text")
+					.attr("x", padding + 7)
+					.attr("y", padding)
+					.attr("dy", ".31em")
+					.text(function(d) { return d.value.stationName; });
+				
+*/
+				function stationCapacity(d){
+					if(d.value !== undefined){
+						if(d.value.availableBikes < 1){
+							return d3.select(this).attr("class", "empty");
+						} else if(d.value.availableBikes >= 1 && d.value.availableBikes < 5){
+							return d3.select(this).attr("class", "caution");
+						} else{
+							return false;
+						}
+					} else{
+						return false;
+					}
+				}
+
+				function transform(d){
+					if(d.value !== undefined){
+						d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
+						d = projection.fromLatLngToDivPixel(d);
+						return d3.select(this)
+							.style("left", (d.x - padding) + "px")
+							.style("top", (d.y - padding) + "px");
+					} else{
+						return false;
+					}
+				}
+			};
+		};
+		
+		// bind overlay to map
+		overlay.setMap(map);
+	});
+
+/* // google maps implementation
+	$.getJSON('sample.json', function(data){
 	    $.each(data.stationBeanList, function(index, station){
 	    	if(station.statusValue != 'De-Registered' && station.statusValue != 'Planned'){
 		    	var icon;
@@ -101,6 +174,7 @@ function addMarkers() {
 		    }
 	    });
 	});
+*/
 }
 
 function setOrigin(point){
