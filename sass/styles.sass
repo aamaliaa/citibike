@@ -51,14 +51,19 @@ h4
 
 .stations circle
 	fill: $green
-	stroke: black
+	stroke: $firm
 	stroke-width: 1.5px
 	cursor: pointer
 
 	&.empty
-		fill: $danger
+		fill: $red
 	&.caution
-		fill: $warning
+		fill: $yellow
+
+.bubble
+	background-color: white
+	border: 1px solid $firm
+	width: 150px
 
 .stationBubble
 	font-family: $base-font-family

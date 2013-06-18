@@ -79,41 +79,59 @@ function addMarkers() {
 			overlay.draw = function(){
 				var projection = this.getProjection(),
 					padding = 10;
-					
+				
 				var marker = layer.selectAll("svg")
 					.data(d3.entries(data.stationBeanList))
 					.each(transform) // update existing markers
 					.enter().append("svg:svg")
 					.each(transform)
 					.attr("class", "marker");
-				
+
 				// add a circle
 				marker.append("svg:circle")
-					.attr("r", 4.5)
+					.attr("r", 7)
 					.attr("cx", padding)
 					.attr("cy", padding)
-					.each(stationCapacity)
-					.on("click", function(d,i){
-						$('#key .info').html("<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>");
-					});
-/*
-				
-				// add a label
-				marker.append("svg:text")
-					.attr("x", padding + 7)
-					.attr("y", padding)
-					.attr("dy", ".31em")
-					.text(function(d) { return d.value.stationName; });
-				
-*/
+					.each(stationCapacity);
+
+				// set tipsy tooltips
+				$('svg circle').tipsy({
+					gravity: 's',
+					html: true,
+					fade: true,
+					opacity: 0.9,
+					offset: 10, // todo: calculate this depending on circle radius
+					delayIn: 400,
+					delayOut: 700,
+					title: function() {
+						var d = this.__data__;
+						return "<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
+					}
+				});
+
 				function stationCapacity(d){
 					if(d.value !== undefined){
-						if(d.value.availableBikes < 1){
-							return d3.select(this).attr("class", "empty");
-						} else if(d.value.availableBikes >= 1 && d.value.availableBikes < 5){
-							return d3.select(this).attr("class", "caution");
+
+						// set radius
+						var ratio = d.value.availableBikes;
+
+						// remove NaN
+						if(isNaN(ratio)){
+							d3.select(this).remove();
 						} else{
-							return false;
+
+							if(ratio < 4.5) ratio = 4.5;
+							if(ratio > 10)	ratio = 9.5;
+							
+							d3.select(this).attr("r", ratio);
+
+							if(ratio == 0){
+								return d3.select(this).attr("class", "empty");
+							} else if(d.value.availableBikes >= 1 && d.value.availableBikes < 5){
+								return d3.select(this).attr("class", "caution");
+							} else{
+								return false;
+							}
 						}
 					} else{
 						return false;
@@ -122,59 +140,27 @@ function addMarkers() {
 
 				function transform(d){
 					if(d.value !== undefined){
-						d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
-						d = projection.fromLatLngToDivPixel(d);
-						return d3.select(this)
-							.style("left", (d.x - padding) + "px")
-							.style("top", (d.y - padding) + "px");
+						if(d.value.statusValue !== 'Planned' && d.value.statusValue !== 'Not In Service'){
+							d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
+							d = projection.fromLatLngToDivPixel(d);
+							return d3.select(this)
+								.style("left", (d.x - padding) + "px")
+								.style("top", (d.y - padding) + "px");
+						} else {
+							return false;
+						}
 					} else{
 						return false;
 					}
 				}
 			};
+
 		};
 		
 		// bind overlay to map
 		overlay.setMap(map);
-	});
 
-/* // google maps implementation
-	$.getJSON('sample.json', function(data){
-	    $.each(data.stationBeanList, function(index, station){
-	    	if(station.statusValue != 'De-Registered' && station.statusValue != 'Planned'){
-		    	var icon;
-		    	var isEmpty = (station.availableBikes < 1) ? true : false;
-		    	
-				var html = "<div class='stationBubble'><h4>"+station.stationName+"</h4><p><dl><dt>status</dt><dd>"+station.statusValue+"</dd><dt>available bikes</dt><dd>"+station.availableBikes+"</dd><dt>available docks</dt><dd>"+station.availableDocks+"</dd><dt>total docks</dt><dd>"+station.totalDocks+"</dd></dl></p></div>";
-				
-				if(isEmpty){
-					icon = 'http://maps.google.com/mapfiles/ms/icons/red.png';
-				} else if(station.availableBikes < 5){
-					icon = 'http://maps.google.com/mapfiles/ms/icons/yellow.png';
-				} else{
-					icon = 'http://maps.google.com/mapfiles/ms/icons/blue.png';
-				}
-				
-				var latLng = new google.maps.LatLng(station.latitude, station.longitude);
-				var marker = new google.maps.Marker({
-					icon: icon,
-					position: latLng,
-					map: map,
-					labelClass: "labels",
-					animation: google.maps.Animation.DROP,
-					html: html
-				});
-				
-				markersArray.push(marker);
-				
-				google.maps.event.addListener(marker, 'click', function() {					
-					infoWindow.setContent(this.html);
-					infoWindow.open(map, this);
-			    });
-		    }
-	    });
 	});
-*/
 }
 
 function setOrigin(point){
