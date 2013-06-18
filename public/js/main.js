@@ -115,8 +115,8 @@ function addMarkers() {
 						// set radius
 						var ratio = d.value.availableBikes;
 
-						// remove NaN
-						if(isNaN(ratio)){
+						// remove NaN, prevent weird floaty markers
+						if(isNaN(ratio) || d.value.stationValue == 'Planned' || d.value.stationValue == 'Not In Service'){
 							d3.select(this).remove();
 						} else{
 
@@ -174,6 +174,17 @@ function setOrigin(point){
 		map: map,
 		position: point,
 		zIndex: 999
+	});
+
+	// update origin input box
+	geocoder.geocode({
+		'latLng': point
+	}, function(results, status){
+		if (status == google.maps.GeocoderStatus.OK) {
+			$('#origin').val(results[1].formatted_address);
+		} else {
+			console.log('Geocode not successful bc: '+status);
+		}
 	});
 	
 }
