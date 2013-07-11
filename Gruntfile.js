@@ -3,10 +3,21 @@ module.exports = function(grunt){
 	'use strict';
 
 	grunt.initConfig({
-
+		jshint: {
+			files: [
+				'app.js',
+				'public/js/main.js',
+				'em.app.js'
+			],
+			options: {
+				globals: {
+					jQuery: true
+				},
+			}
+		},
 		watch: {
-			files: 'views/templates/*.hbs',
-			tasks: 'ember_templates'
+			files: ['views/templates/*.hbs', '<%= jshint.files %>'],
+			tasks: ['jshint', 'ember_templates']
 		},
 		// compile ember templates
 		ember_templates: {
@@ -25,8 +36,9 @@ module.exports = function(grunt){
 
 	// load plugin...
 	grunt.loadNpmTasks('grunt-ember-templates');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 
 	// define handlebars task
-	grunt.registerTask('default', ['ember_templates']);
+	grunt.registerTask('default', ['jshint', 'ember_templates']);
 
 }

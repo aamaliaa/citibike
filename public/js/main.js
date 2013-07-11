@@ -24,14 +24,14 @@ function initialize() {
     
     geocoder = new google.maps.Geocoder();
 	map = new google.maps.Map(d3.select(mapDiv).node(), {
-	  center: new google.maps.LatLng(40.73492695, -73.99200509),
-	  zoom: 13,
-  	  maxZoom: 18,
-	  minZoom: 13,
-	  mapTypeId: google.maps.MapTypeId.ROADMAP,
-	  mapTypeControl: false,
-	  streetViewControl: false,
-	  backgroundColor: '#ffffff'
+		center: new google.maps.LatLng(40.73492695, -73.99200509),
+		zoom: 13,
+		maxZoom: 18,
+		minZoom: 13,
+		mapTypeId: google.maps.MapTypeId.ROADMAP,
+		mapTypeControl: false,
+		streetViewControl: false,
+		backgroundColor: '#ffffff'
 	});
 	
 	bikeLayer = new google.maps.BicyclingLayer();
@@ -125,7 +125,7 @@ function addMarkers() {
 							
 							d3.select(this).attr("r", ratio);
 
-							if(ratio == 0){
+							if(ratio === 0){
 								return d3.select(this).attr("class", "empty");
 							} else if(d.value.availableBikes >= 1 && d.value.availableBikes < 5){
 								return d3.select(this).attr("class", "caution");
@@ -203,9 +203,9 @@ function setDestination(){
 				destinationMarker.setMap(null);
 			
 			// center point in viewport
-	        map.setCenter(results[0].geometry.location);
-	        
-	        // set marker
+			map.setCenter(results[0].geometry.location);
+
+			// set marker
 			destinationMarker = new google.maps.Marker({
 				map: map,
 				position: results[0].geometry.location
