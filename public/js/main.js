@@ -1,4 +1,5 @@
 var map;
+var stationData;
 var infoWindow;
 var geocoder;
 var nycBounds;
@@ -8,21 +9,26 @@ var origin,
 	destination,
 	destinationMarker;
 
+var directionsDisplay;
+
+var directionsService = new google.maps.DirectionsService();
+var overlay = new google.maps.OverlayView();
+
 var markersArray = [];
 var infoWindowsArray = [];
 
 function initialize() {
 	var mapDiv = document.getElementById('map-canvas');
 	$('#map-canvas').css("height", $(window).height()+"px");
-    $('#map-canvas').css("width", $(window).width()+"px");
-    
-    getPosition();
-    
-    nycBounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781));
-    
-    google.maps.visualRefresh = true; // new gmaps style
-    
-    geocoder = new google.maps.Geocoder();
+	$('#map-canvas').css("width", $(window).width()+"px");
+	
+	getPosition();
+	
+	nycBounds = new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781));
+	
+	google.maps.visualRefresh = true; // new gmaps style
+	
+	geocoder = new google.maps.Geocoder();
 	map = new google.maps.Map(d3.select(mapDiv).node(), {
 		center: new google.maps.LatLng(40.73492695, -73.99200509),
 		zoom: 13,
@@ -40,6 +46,9 @@ function initialize() {
 	infoWindow = new google.maps.InfoWindow({
 		content: 'loading...'
 	});
+
+	directionsDisplay = new google.maps.DirectionsRenderer();
+	directionsDisplay.setMap(map);
 	
 	google.maps.event.addListenerOnce(map, 'tilesloaded', addMarkers);
 
@@ -68,7 +77,8 @@ function getPosition() {
 function addMarkers() {
 	// d3 implementation
 	d3.json('sample.json', function(data){
-		var overlay = new google.maps.OverlayView();
+
+		stationData = data;
 		
 		// add container when overlay is added to map
 		overlay.onAdd = function(){
@@ -154,7 +164,6 @@ function addMarkers() {
 					}
 				}
 			};
-
 		};
 		
 		// bind overlay to map
@@ -198,31 +207,94 @@ function setDestination(){
 	}, function(results, status){
 		if (status == google.maps.GeocoderStatus.OK) {
 			
+			destination = results[0].geometry.location;
+
 			// if destination already exists on map, clear it
 			if(destinationMarker)
 				destinationMarker.setMap(null);
-			
-			// center point in viewport
-			map.setCenter(results[0].geometry.location);
 
 			// set marker
 			destinationMarker = new google.maps.Marker({
 				map: map,
-				position: results[0].geometry.location
+				position: destination
 			});
-			
+
 			// set destination value
 			$('#destination').val(results[0].formatted_address);
+
+			calculateRoute();
+
 		} else{
 			console.log('Geocode not successful bc: '+status);
 		}
 	});
 }
 
+function calculateRoute(){
+
+	var mode = 'BICYCLING';
+
+	var closestOrigin, closestDestination;
+
+	$.each(stationData.stationBeanList, function(){
+		if(closestOrigin == null){
+			closestOrigin = this;
+		}
+
+		if(closestDestination == null){
+			closestDestination = this;
+		}
+
+		this.distOrigin = getDistance(this.latitude, this.longitude, origin.jb, origin.kb);
+		this.distDest = getDistance(this.latitude, this.longitude, destination.jb, destination.kb);
+
+		if(this.distOrigin < closestOrigin.distOrigin){
+			closestOrigin = this;
+		}
+
+		if(this.distDest < closestDestination.distDest){
+			closestDestination = this;
+		}
+
+	});
+
+	var request = {
+		origin: new google.maps.LatLng(closestOrigin.latitude, closestOrigin.longitude),
+		destination: new google.maps.LatLng(closestDestination.latitude, closestDestination.longitude),
+		travelMode: google.maps.TravelMode[mode]
+	};
+	
+	directionsService.route(request, function(response, status){
+		if(status == google.maps.DirectionsStatus.OK){
+			directionsDisplay.setDirections(response);
+		}
+	});
+
+}
+
+// found here: http://stackoverflow.com/questions/27928/how-do-i-calculate-distance-between-two-latitude-longitude-points
+function getDistance(lat1,lon1,lat2,lon2) {
+	var R = 6371; // Radius of the earth in km
+	var dLat = deg2rad(lat2-lat1);  // deg2rad below
+	var dLon = deg2rad(lon2-lon1); 
+	var a = 
+		Math.sin(dLat/2) * Math.sin(dLat/2) +
+		Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+		Math.sin(dLon/2) * Math.sin(dLon/2)
+		; 
+	var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+	var d = R * c; // Distance in km
+	return d;
+}
+
+function deg2rad(deg) {
+	return deg * (Math.PI/180)
+}
+
 google.maps.event.addDomListener(window, 'load', initialize);
 
 $(window).resize(function(){
 	$('#map-canvas').css("height", $(window).height()+"px");
-    $('#map-canvas').css("width", $(window).width()+"px");
+	$('#map-canvas').css("width", $(window).width()+"px");
 	google.maps.event.trigger(map, 'resize');
 });
