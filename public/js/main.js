@@ -237,11 +237,11 @@ function calculateRoute(){
 	var closestOrigin, closestDestination;
 
 	$.each(stationData.stationBeanList, function(){
-		if(closestOrigin == null){
+		if(closestOrigin === null){
 			closestOrigin = this;
 		}
 
-		if(closestDestination == null){
+		if(closestDestination === null){
 			closestDestination = this;
 		}
 
@@ -288,7 +288,7 @@ function getDistance(lat1,lon1,lat2,lon2) {
 }
 
 function deg2rad(deg) {
-	return deg * (Math.PI/180)
+	return deg * (Math.PI/180);
 }
 
 google.maps.event.addDomListener(window, 'load', initialize);
