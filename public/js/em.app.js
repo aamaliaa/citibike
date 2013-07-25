@@ -10,9 +10,9 @@ App.ApplicationView = Em.View.extend({
 	elementId: 'app'
 });
 
-App.MapController = Em.Object.create({
+App.MapController = Em.ArrayController.create({
 	nycBounds: new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781)),
-	map: null,
+	gMap: null,
 	mapSettings: {
 		center: new google.maps.LatLng(40.73492695, -73.99200509),
 		zoom: 13,
@@ -28,79 +28,84 @@ App.MapController = Em.Object.create({
 	directionsRenderer: null,
 	directionsService: null,
 	overlay: null,
-	stations: null,
 	getStations: function(){
+
+		console.log('getting stations...');
+
+		var that = App.MapController;
 		d3.json('sample.json', function(data){
-			App.MapController.set('stations', data);
+			that.set('stations', data);
 		});
+
 	},
-	addStations: function(){
+	drawStations: function(){
+		console.log('drawing stations...');
 
-		var overlay = App.MapController.get('overlay'); // todo: how come "this" doesn't work?
+		var overlay = this.get('overlay'), // todo: how come "this" doesn't work?
+			data = this.get('stations');
 
-		var data = this.get('stations');
-		
-		console.log(data);
-			// add container when overlay is added to map
-			overlay.onAdd = function(){
-				var layer = d3.select(this.getPanes().overlayMouseTarget).append('div')
-					.attr('class', 'stations');
+		// add container when overlay is added to map
+		overlay.onAdd = function(){
+			var layer = d3.select(this.getPanes().overlayMouseTarget).append('div')
+				.attr('class', 'stations');
 
-				// draw each marker as separate SVG element
-				overlay.draw = function(){
-					var projection = this.getProjection(),
-						padding = 10;
+			var that = this;
 
-					var marker = layer.selectAll('svg')
-						.data(d3.entries(data.stationBeanList))
-						.each(transform) // update existing markers
-						.enter().append('svg:svg')
-						.each(transform)
-						.attr('class', 'marker');
+			// draw each marker as separate SVG element
+			overlay.draw = function(){
+				var projection = that.getProjection(),
+					padding = 10;
 
-					// add a circle
-					marker.append('svg:circle')
-						.attr('r', 7)
-						.attr('cx', padding)
-						.attr('cy', padding)
-						.each(App.MapController.getStationCapacity(d));
+				var marker = layer.selectAll('svg')
+					.data(d3.entries(data.stationBeanList))
+					.each(transform) // update existing markers
+					.enter().append('svg:svg')
+					.each(transform)
+					.attr('class', 'marker');
 
-					// set tipsy tooltips
-					$('svg circle').tipsy({
-						gravity: 's',
-						html: true,
-						fade: true,
-						opacity: 0.9,
-						offset: 10, // todo: calculate this depending on radius
-						delayIn: 400,
-						delayOut: 700,
-						title: function(){
-							//var d = this.__data__;
-							return "<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
+				// add a circle
+				marker.append('svg:circle')
+					.attr('r', 7)
+					.attr('cx', padding)
+					.attr('cy', padding)
+					.each(App.MapController.getStationCapacity);
+
+				// set tipsy tooltips
+				$('svg circle').tipsy({
+					gravity: 's',
+					html: true,
+					fade: true,
+					opacity: 0.9,
+					offset: 10, // todo: calculate this depending on radius
+					delayIn: 400,
+					delayOut: 700,
+					title: function(){
+						var d = this.__data__;
+						return "<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
+					}
+				});
+
+				function transform(d){
+					if(d.value !== undefined){
+						if(d.value.statusValue !== 'Planned' && d.value.statusValue !== 'Not In Service'){
+							d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
+							d = projection.fromLatLngToDivPixel(d);
+							return d3.select(this)
+								.style("left", (d.x - padding) + "px")
+								.style("top", (d.y - padding) + "px");
+						} else {
+							return false;
 						}
-					});
-				};
-			};
-
-			function transform(d){
-				if(d.value !== undefined){
-					if(d.value.statusValue !== 'Planned' && d.value.statusValue !== 'Not In Service'){
-						d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
-						d = projection.fromLatLngToDivPixel(d);
-						return d3.select(this)
-							.style("left", (d.x - padding) + "px")
-							.style("top", (d.y - padding) + "px");
-					} else {
+					} else{
 						return false;
 					}
-				} else{
-					return false;
 				}
-			}
+			};
+		};
 
-			overlay.setMap(App.MapController.get('map'));
+		overlay.setMap(App.MapController.get('gMap'));
 
-	}.observes('stations'),
+	},
 	getStationCapacity: function(d){
 		if(d.value !== undefined){
 
@@ -133,6 +138,7 @@ App.MapController = Em.Object.create({
 
 App.MapView = Em.View.extend({
 	templateName: 'mapView',
+	stationsBinding: 'App.MapController.stations',
 	didInsertElement: function(){
 		// set height and width
 		$('#map-canvas').css("height", $(window).height()+"px");
@@ -142,7 +148,7 @@ App.MapView = Em.View.extend({
 		
 		var map = new google.maps.Map(document.getElementById('map-canvas'), App.MapController.get('mapSettings'));
 		
-		App.MapController.set('map', map);
+		App.MapController.set('gMap', map);
 
 		var maps_vars = {
 			bikeLayer: new google.maps.BicyclingLayer(),
@@ -156,13 +162,17 @@ App.MapView = Em.View.extend({
 			App.MapController.set(name, maps_vars[name]);
 		}
 
-		App.MapController.get('bikeLayer').setMap(App.MapController.get('map'));
-		App.MapController.get('directionsRenderer').setMap(App.MapController.get('map'));
+		App.MapController.get('bikeLayer').setMap(App.MapController.get('gMap'));
+		App.MapController.get('directionsRenderer').setMap(App.MapController.get('gMap'));
 
-		google.maps.event.addListenerOnce(App.MapController.get('map'), 'tilesloaded', App.MapController.getStations);
+		//App.MapController.getStations();
+		google.maps.event.addListenerOnce(App.MapController.get('gMap'), 'tilesloaded', App.MapController.getStations);
 	},
+	drawStations: function(){
+		App.MapController.drawStations();
+	}.observes('stations'),
 	handleResize: function(){
-		google.maps.event.trigger(App.MapController.get('map'), 'resize');
+		google.maps.event.trigger(App.MapController.get('gMap'), 'resize');
 	}
 });
 
