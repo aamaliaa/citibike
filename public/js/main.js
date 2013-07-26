@@ -225,6 +225,7 @@ function setDestination(){
 			calculateRoute();
 
 		} else{
+			console.log(results);
 			console.log('Geocode not successful bc: '+status);
 		}
 	});

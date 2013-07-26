@@ -28,6 +28,32 @@ App.MapController = Em.ArrayController.create({
 	directionsRenderer: null,
 	directionsService: null,
 	overlay: null,
+	origin: null,
+	getPosition: function(){
+		if(!navigator.geolocation){
+			console.log('Geolocation is not supported by browser.');
+			return false;
+		}
+
+		console.log('getting position...');
+
+		this.set('origin', navigator.geolocation.getCurrentPosition(
+			function(position){
+				var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+				// doing this here bc observes() didn't work on view
+				App.MapController.setOrigin(point);
+
+				return point;
+			}, function(){
+				console.log('Unable to retrieve your location');
+				return false;
+			})
+		);
+	},
+	setOrigin: function(origin){
+		this.set('origin', origin);
+	},
 	getStations: function(){
 
 		console.log('getting stations...');
@@ -39,10 +65,11 @@ App.MapController = Em.ArrayController.create({
 
 	},
 	drawStations: function(){
+		
 		console.log('drawing stations...');
 
 		var overlay = this.get('overlay'), // todo: how come "this" doesn't work?
-			data = this.get('stations');
+			data = this.get('stations').stationBeanList;
 
 		// add container when overlay is added to map
 		overlay.onAdd = function(){
@@ -57,7 +84,7 @@ App.MapController = Em.ArrayController.create({
 					padding = 10;
 
 				var marker = layer.selectAll('svg')
-					.data(d3.entries(data.stationBeanList))
+					.data(d3.entries(data))
 					.each(transform) // update existing markers
 					.enter().append('svg:svg')
 					.each(transform)
@@ -81,7 +108,7 @@ App.MapController = Em.ArrayController.create({
 					delayOut: 700,
 					title: function(){
 						var d = this.__data__;
-						return "<div class='stationBubble'><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
+						return "<div class=\"stationBubble\"><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
 					}
 				});
 
@@ -103,34 +130,35 @@ App.MapController = Em.ArrayController.create({
 			};
 		};
 
+		// bind overlay to map
 		overlay.setMap(App.MapController.get('gMap'));
 
 	},
 	getStationCapacity: function(d){
-		if(d.value !== undefined){
-
+		if(d.value !== undefined || /^\d*$/i.test(d.key)){
 			// set radius
 			var ratio = d.value.availableBikes;
 
 			// remove NaN, prevent weird floaty markers
-			if(isNaN(ratio) || d.value.stationValue == 'Planned' || d.value.stationValue == 'Not In Service'){
+			if(isNaN(ratio) || d.value.stationValue === 'Planned' || d.value.stationValue === 'Not In Service'){
 				d3.select(this).remove();
 			} else{
 
 				if(ratio < 4.5) ratio = 4.5;
-				if(ratio > 10)	ratio = 9.5;
+				if(ratio > 9)	ratio = 9;
 				
 				d3.select(this).attr("r", ratio);
 
-				if(ratio === 0){
+				if(d.value.availableBikes === 0){
 					return d3.select(this).attr("class", "empty");
-				} else if(d.value.availableBikes >= 1 && d.value.availableBikes < 5){
+				} else if(d.value.availableBikes > 0 && d.value.availableBikes < 5){
 					return d3.select(this).attr("class", "caution");
 				} else{
 					return false;
 				}
 			}
 		} else{
+			d3.select(this).remove();
 			return false;
 		}
 	}
@@ -146,10 +174,11 @@ App.MapView = Em.View.extend({
 
 		google.maps.visualRefresh = true; // new gmaps style
 		
+		// set map in MapController
 		var map = new google.maps.Map(document.getElementById('map-canvas'), App.MapController.get('mapSettings'));
-		
 		App.MapController.set('gMap', map);
 
+		// set gmaps vars in MapController
 		var maps_vars = {
 			bikeLayer: new google.maps.BicyclingLayer(),
 			geocoder: new google.maps.Geocoder(),
@@ -165,17 +194,45 @@ App.MapView = Em.View.extend({
 		App.MapController.get('bikeLayer').setMap(App.MapController.get('gMap'));
 		App.MapController.get('directionsRenderer').setMap(App.MapController.get('gMap'));
 
-		//App.MapController.getStations();
+		// getStations when map is loaded
 		google.maps.event.addListenerOnce(App.MapController.get('gMap'), 'tilesloaded', App.MapController.getStations);
 	},
 	drawStations: function(){
+		// observes 'stations' and redraws overlay on map when they change
 		App.MapController.drawStations();
+
+		// get device position
+		App.MapController.getPosition();
 	}.observes('stations'),
 	handleResize: function(){
+		// handles the window/map resize
 		google.maps.event.trigger(App.MapController.get('gMap'), 'resize');
 	}
 });
 
 App.SidebarView = Em.View.extend({
-	templateName: 'sidebarView'
+	templateName: 'sidebarView',
+	originBinding: 'App.MapController.origin',
+	formattedOrigin: null,
+	setOrigin: function(){
+		var that = this;
+		if(App.MapController.get('origin') !== undefined){
+			App.MapController.geocoder.geocode({
+					'latLng': App.MapController.get('origin')
+				}, function(results, status){
+					if(status === google.maps.GeocoderStatus.OK){
+						that.set('formattedOrigin', results[1].formatted_address);
+					} else{
+						console.log('Geocode not successful bc: '+status);
+					}
+			});
+		}
+	}.observes('origin')
+});
+
+// handle window resize
+$(window).resize(function(){
+	$('#map-canvas').css("height", $(window).height()+"px");
+	$('#map-canvas').css("width", $(window).width()+"px");
+	App.MapView.handleResize;
 });
