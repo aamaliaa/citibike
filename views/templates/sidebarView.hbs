@@ -1,12 +1,16 @@
 <div class="content">
 	<p>Where do you want to go?</p>
 	<p>from</p>
+{{#view App.FormView}}
 	<div class="input">
 		<span class="label">A</span>
 		{{view Em.TextField id="origin" valueBinding="view.formattedOrigin" placeholder="address or location"}}
 	</div>
 	<p>to</p>
-	<div class="input"><span class="label">B</span><input id="destination" type="text" placeholder="address or location"></div>
-<!-- 	<input type="button" class="btn-primary" value="plot" onclick="setDestination()"> -->
-	<input type="button" class="btn-primary" value="plot" {{action 'plot'}}>
+	<div class="input">
+		<span class="label">B</span>
+		{{view Em.TextField id="destination" valueBinding="view.destination" placeholder="address or location"}}
+	</div>
+	<button type="submit" class="btn-primary">plot</button>
+{{/view}}
 </div>

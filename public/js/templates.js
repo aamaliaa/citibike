@@ -30,10 +30,12 @@ helpers = helpers || Ember.Handlebars.helpers; data = data || {};
 Ember.TEMPLATES["sidebarView"] = Ember.Handlebars.template(function anonymous(Handlebars,depth0,helpers,partials,data) {
 this.compilerInfo = [3,'>= 1.0.0-rc.4'];
 helpers = helpers || Ember.Handlebars.helpers; data = data || {};
-  var buffer = '', hashContexts, hashTypes, escapeExpression=this.escapeExpression;
+  var buffer = '', stack1, hashTypes, hashContexts, escapeExpression=this.escapeExpression, self=this;
 
-
-  data.buffer.push("<div class=\"content\">\n	<p>Where do you want to go?</p>\n	<p>from</p>\n	<div class=\"input\">\n		<span class=\"label\">A</span>\n		");
+function program1(depth0,data) {
+  
+  var buffer = '', hashContexts, hashTypes;
+  data.buffer.push("\n	<div class=\"input\">\n		<span class=\"label\">A</span>\n		");
   hashContexts = {'id': depth0,'valueBinding': depth0,'placeholder': depth0};
   hashTypes = {'id': "STRING",'valueBinding': "STRING",'placeholder': "STRING"};
   data.buffer.push(escapeExpression(helpers.view.call(depth0, "Em.TextField", {hash:{
@@ -41,11 +43,24 @@ helpers = helpers || Ember.Handlebars.helpers; data = data || {};
     'valueBinding': ("view.formattedOrigin"),
     'placeholder': ("address or location")
   },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\n	</div>\n	<p>to</p>\n	<div class=\"input\"><span class=\"label\">B</span><input id=\"destination\" type=\"text\" placeholder=\"address or location\"></div>\n<!-- 	<input type=\"button\" class=\"btn-primary\" value=\"plot\" onclick=\"setDestination()\"> -->\n	<input type=\"button\" class=\"btn-primary\" value=\"plot\" ");
+  data.buffer.push("\n	</div>\n	<p>to</p>\n	<div class=\"input\">\n		<span class=\"label\">B</span>\n		");
+  hashContexts = {'id': depth0,'valueBinding': depth0,'placeholder': depth0};
+  hashTypes = {'id': "STRING",'valueBinding': "STRING",'placeholder': "STRING"};
+  data.buffer.push(escapeExpression(helpers.view.call(depth0, "Em.TextField", {hash:{
+    'id': ("destination"),
+    'valueBinding': ("view.destination"),
+    'placeholder': ("address or location")
+  },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  data.buffer.push("\n	</div>\n	<button type=\"submit\" class=\"btn-primary\">plot</button>\n");
+  return buffer;
+  }
+
+  data.buffer.push("<div class=\"content\">\n	<p>Where do you want to go?</p>\n	<p>from</p>\n");
   hashTypes = {};
   hashContexts = {};
-  data.buffer.push(escapeExpression(helpers.action.call(depth0, "plot", {hash:{},contexts:[depth0],types:["STRING"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push(">\n</div>");
+  stack1 = helpers.view.call(depth0, "App.FormView", {hash:{},inverse:self.noop,fn:self.program(1, program1, data),contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data});
+  if(stack1 || stack1 === 0) { data.buffer.push(stack1); }
+  data.buffer.push("\n</div>");
   return buffer;
   
 });

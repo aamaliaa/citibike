@@ -33,7 +33,9 @@ App.MapController = Em.Object.create({
 	directionsService: null,
 	overlay: null,
 	origin: null,
+	originLatLng: null,
 	destination: null,
+	destLatLng: null,
 	getPosition: function(){
 		if(!navigator.geolocation){
 			console.log('Geolocation is not supported by browser.');
@@ -59,18 +61,38 @@ App.MapController = Em.Object.create({
 	setOrigin: function(origin){
 		this.set('origin', origin);
 	},
-	getStations: function(){
+	setDestination: function(){
+		console.log('we here');
 
+		var self = this,
+			dest = self.get('destination');
+
+		self.geocoder.geocode({
+			'address': dest,
+			'bounds': self.get('nycBounds'),
+			'region': 'US'
+		}, function(results, status){
+			if(status === google.maps.GeocoderStatus.OK){
+				console.log(results[0]);
+				self.set('destination', results[0].formatted_address);
+				self.set('destLatLng', results[0].geometry.location);
+
+				self.calculateRoute(); // todo
+
+			} else{
+				console.log('Geocode unsuccessful because: '+status);
+			}
+		});
+	},
+	getStations: function(){
 		console.log('getting stations...');
 
 		var that = App.MapController;
 		d3.json('sample.json', function(data){
 			that.set('stations', data);
 		});
-
 	},
 	drawStations: function(){
-		
 		console.log('drawing stations...');
 
 		var overlay = this.get('overlay'), // todo: how come "this" doesn't work?
@@ -137,7 +159,6 @@ App.MapController = Em.Object.create({
 
 		// bind overlay to map
 		overlay.setMap(App.MapController.get('gMap'));
-
 	},
 	getStationCapacity: function(d){
 		if(d.value !== undefined || /^\d*$/i.test(d.key)){
@@ -166,9 +187,6 @@ App.MapController = Em.Object.create({
 			d3.select(this).remove();
 			return false;
 		}
-	},
-	setDestination: function(){
-		console.log('setting destination...');
 	}
 });
 
@@ -218,32 +236,35 @@ App.MapView = Em.View.extend({
 	}
 });
 
-// doesn't work.
-App.SidebarController = Em.Controller.extend({
-	plot: function(){
-		console.log('SideBarController is handling \'plot\'');
-		App.MapController.setDestination;
-	}
+App.SidebarView = Em.View.extend({
+	templateName: 'sidebarView'
 });
 
-App.SidebarView = Em.View.extend({
-	templateName: 'sidebarView',
+App.FormView = Em.View.extend({
+	tagName: 'form',
 	originBinding: 'App.MapController.origin',
+	destinationBinding: 'App.MapController.destination',
 	formattedOrigin: null,
-	setOrigin: function(){
+	formatOrigin: function(){
 		var that = this;
-		if(App.MapController.get('origin') !== undefined){
+		if(that.origin !== undefined){
 			App.MapController.geocoder.geocode({
-					'latLng': App.MapController.get('origin')
+					'latLng': that.get('origin')
 				}, function(results, status){
 					if(status === google.maps.GeocoderStatus.OK){
 						that.set('formattedOrigin', results[1].formatted_address);
 					} else{
 						console.log('Geocode not successful bc: '+status);
+						return false;
 					}
 			});
 		}
-	}.observes('origin')
+	}.observes('origin'),
+	submit: function(e){
+		console.log('submitting');
+		e.preventDefault();
+		App.MapController.setDestination();
+	}
 });
 
 // handle window resize
