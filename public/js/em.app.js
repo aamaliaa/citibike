@@ -3,14 +3,18 @@ var App = Em.Application.create({
 	LOG_TRANSITIONS: true
 });
 
-App.ApplicationController = Em.Controller.extend();
+App.ApplicationController = Em.Controller.extend({
+	plot: function(){
+		console.log('ApplicationController is handling \'plot\'');
+	}
+});
 
 App.ApplicationView = Em.View.extend({
 	templateName: 'appView',
 	elementId: 'app'
 });
 
-App.MapController = Em.ArrayController.create({
+App.MapController = Em.Object.create({
 	nycBounds: new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781)),
 	gMap: null,
 	mapSettings: {
@@ -29,6 +33,7 @@ App.MapController = Em.ArrayController.create({
 	directionsService: null,
 	overlay: null,
 	origin: null,
+	destination: null,
 	getPosition: function(){
 		if(!navigator.geolocation){
 			console.log('Geolocation is not supported by browser.');
@@ -161,6 +166,9 @@ App.MapController = Em.ArrayController.create({
 			d3.select(this).remove();
 			return false;
 		}
+	},
+	setDestination: function(){
+		console.log('setting destination...');
 	}
 });
 
@@ -207,6 +215,14 @@ App.MapView = Em.View.extend({
 	handleResize: function(){
 		// handles the window/map resize
 		google.maps.event.trigger(App.MapController.get('gMap'), 'resize');
+	}
+});
+
+// doesn't work.
+App.SidebarController = Em.Controller.extend({
+	plot: function(){
+		console.log('SideBarController is handling \'plot\'');
+		App.MapController.setDestination;
 	}
 });
 

@@ -41,7 +41,11 @@ helpers = helpers || Ember.Handlebars.helpers; data = data || {};
     'valueBinding': ("view.formattedOrigin"),
     'placeholder': ("address or location")
   },contexts:[depth0],types:["ID"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
-  data.buffer.push("\n	</div>\n	<p>to</p>\n	<div class=\"input\"><span class=\"label\">B</span><input id=\"destination\" type=\"text\" placeholder=\"address or location\"></div>\n	<input type=\"button\" class=\"btn-primary\" value=\"plot\" onclick=\"setDestination()\">\n\n</div>");
+  data.buffer.push("\n	</div>\n	<p>to</p>\n	<div class=\"input\"><span class=\"label\">B</span><input id=\"destination\" type=\"text\" placeholder=\"address or location\"></div>\n<!-- 	<input type=\"button\" class=\"btn-primary\" value=\"plot\" onclick=\"setDestination()\"> -->\n	<input type=\"button\" class=\"btn-primary\" value=\"plot\" ");
+  hashTypes = {};
+  hashContexts = {};
+  data.buffer.push(escapeExpression(helpers.action.call(depth0, "plot", {hash:{},contexts:[depth0],types:["STRING"],hashContexts:hashContexts,hashTypes:hashTypes,data:data})));
+  data.buffer.push(">\n</div>");
   return buffer;
   
 });
