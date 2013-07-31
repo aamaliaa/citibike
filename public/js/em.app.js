@@ -17,6 +17,7 @@ App.ApplicationView = Em.View.extend({
 App.MapController = Em.Object.create({
 	nycBounds: new google.maps.LatLngBounds(new google.maps.LatLng(40.666577080451354, -74.036865234375), new google.maps.LatLng(40.879775645515764, -73.85078430175781)),
 	gMap: null,
+	stations: null,
 	mapSettings: {
 		center: new google.maps.LatLng(40.73492695, -73.99200509),
 		zoom: 13,
@@ -32,10 +33,16 @@ App.MapController = Em.Object.create({
 	directionsRenderer: null,
 	directionsService: null,
 	overlay: null,
-	origin: null,
-	originLatLng: null,
-	destination: null,
-	destLatLng: null,
+	origin: {
+		object: null,
+		latLng: null,
+		closestStation: null
+	},
+	destination: {
+		object: null,
+		latLng: null,
+		closestStation: null
+	},
 	getPosition: function(){
 		if(!navigator.geolocation){
 			console.log('Geolocation is not supported by browser.');
@@ -44,11 +51,10 @@ App.MapController = Em.Object.create({
 
 		console.log('getting position...');
 
-		this.set('origin', navigator.geolocation.getCurrentPosition(
+		this.set('origin.object', navigator.geolocation.getCurrentPosition(
 			function(position){
 				var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
 
-				// doing this here bc observes() didn't work on view
 				App.MapController.setOrigin(point);
 
 				return point;
@@ -59,13 +65,18 @@ App.MapController = Em.Object.create({
 		);
 	},
 	setOrigin: function(origin){
-		this.set('origin', origin);
+		var self = this;
+
+		self.geocoder.geocode({
+			'latLng': origin,
+		}, function(results, status){
+			self.set('origin.object', results[1].formatted_address);
+			self.set('origin.latLng', results[1].geometry.location);
+		});
 	},
 	setDestination: function(){
-		console.log('we here');
-
 		var self = this,
-			dest = self.get('destination');
+			dest = self.get('destination.object');
 
 		self.geocoder.geocode({
 			'address': dest,
@@ -73,11 +84,10 @@ App.MapController = Em.Object.create({
 			'region': 'US'
 		}, function(results, status){
 			if(status === google.maps.GeocoderStatus.OK){
-				console.log(results[0]);
-				self.set('destination', results[0].formatted_address);
-				self.set('destLatLng', results[0].geometry.location);
+				self.set('destination.object', results[0].formatted_address);
+				self.set('destination.latLng', results[0].geometry.location);
 
-				self.calculateRoute(); // todo
+				self.calculateRoute();
 
 			} else{
 				console.log('Geocode unsuccessful because: '+status);
@@ -187,6 +197,66 @@ App.MapController = Em.Object.create({
 			d3.select(this).remove();
 			return false;
 		}
+	},
+	calculateRoute: function(){
+		var self = this,
+			origin = self.get('origin.latLng'),
+			destination = self.get('destination.latLng'),
+			request;
+
+		// iterate thru all stations and find closest to origin/destination
+		$.each(self.get('stations').stationBeanList, function(){
+
+			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.jb, origin.kb);
+			this.distDest = self.getDistance(this.latitude, this.longitude, destination.jb, destination.kb);
+
+			if(self.get('origin.closestStation') === null){
+				self.set('origin.closestStation', this);
+			}
+
+			if(self.get('destination.closestStation') === null){
+				self.set('destination.closestStation', this);
+			}
+
+			if(this.distOrigin < self.get('origin.closestStation.distOrigin')){
+				self.set('origin.closestStation', this);
+			}
+
+			if(this.distDest < self.get('destination.closestStation.distDest')){
+				self.set('destination.closestStation', this);
+			}
+
+		});
+
+		request = {
+			origin: new google.maps.LatLng(self.get('origin.closestStation.latitude'), self.get('origin.closestStation.longitude')),
+			destination: new google.maps.LatLng(self.get('destination.closestStation.latitude'), self.get('destination.closestStation.longitude')),
+			travelMode: google.maps.TravelMode['BICYCLING']
+		};
+
+		self.get('directionsService').route(request, function(response, status){
+			if(status === google.maps.DirectionsStatus.OK){
+				self.get('directionsRenderer').setDirections(response);
+			}
+		});
+	},
+	// found here: http://stackoverflow.com/questions/27928/how-do-i-calculate-distance-between-two-latitude-longitude-points
+	getDistance: function(lat1, lon1, lat2, lon2){
+		var R = 6371; // Radius of the earth in km
+		var dLat = deg2rad(lat2-lat1);  // deg2rad below
+		var dLon = deg2rad(lon2-lon1); 
+		var a = 
+			Math.sin(dLat/2) * Math.sin(dLat/2) +
+			Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+			Math.sin(dLon/2) * Math.sin(dLon/2)
+			; 
+		var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+		var d = R * c; // Distance in km
+		return d;
+
+		function deg2rad(deg) {
+			return deg * (Math.PI/180);
+		}
 	}
 });
 
@@ -242,26 +312,9 @@ App.SidebarView = Em.View.extend({
 
 App.FormView = Em.View.extend({
 	tagName: 'form',
-	originBinding: 'App.MapController.origin',
-	destinationBinding: 'App.MapController.destination',
-	formattedOrigin: null,
-	formatOrigin: function(){
-		var that = this;
-		if(that.origin !== undefined){
-			App.MapController.geocoder.geocode({
-					'latLng': that.get('origin')
-				}, function(results, status){
-					if(status === google.maps.GeocoderStatus.OK){
-						that.set('formattedOrigin', results[1].formatted_address);
-					} else{
-						console.log('Geocode not successful bc: '+status);
-						return false;
-					}
-			});
-		}
-	}.observes('origin'),
+	originBinding: 'App.MapController.origin.object',
+	destinationBinding: 'App.MapController.destination.object',
 	submit: function(e){
-		console.log('submitting');
 		e.preventDefault();
 		App.MapController.setDestination();
 	}
