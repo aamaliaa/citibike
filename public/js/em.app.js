@@ -307,7 +307,13 @@ App.MapView = Em.View.extend({
 });
 
 App.SidebarView = Em.View.extend({
-	templateName: 'sidebarView'
+	templateName: 'sidebarView',
+	execTimeBinding: 'App.MapController.stations.executionTime',
+	updated: function(){
+		if(this.get('execTime') !== null){
+			return moment(this.get('execTime'), 'YYYY-MM-DD HH:mm:ss Z').fromNow();
+		}
+	}.property('execTime')
 });
 
 App.FormView = Em.View.extend({

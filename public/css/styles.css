@@ -339,3 +339,8 @@ h4 {
       -webkit-box-sizing: border-box;
       -moz-box-sizing: border-box;
       box-sizing: border-box; }
+  .content .note {
+    position: absolute;
+    bottom: 0;
+    padding-bottom: 10px;
+    font-size: 12px; }
