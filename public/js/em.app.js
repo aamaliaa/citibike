@@ -218,7 +218,7 @@ App.MapController = Em.Object.create({
 			request;
 
 		// iterate thru all stations and find closest to origin/destination
-		$.each(self.get('stations').stationBeanList, function(){
+		$.each(self.get('stations').results, function(){
 
 			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.jb, origin.kb);
 			this.distDest = self.getDistance(this.latitude, this.longitude, destination.jb, destination.kb);
