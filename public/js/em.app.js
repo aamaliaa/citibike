@@ -3,12 +3,6 @@ var App = Em.Application.create({
 	LOG_TRANSITIONS: true
 });
 
-App.ApplicationController = Em.Controller.extend({
-	plot: function(){
-		console.log('ApplicationController is handling \'plot\'');
-	}
-});
-
 App.ApplicationView = Em.View.extend({
 	templateName: 'appView',
 	elementId: 'app'
@@ -117,7 +111,7 @@ App.MapController = Em.Object.create({
 		console.log('getting stations...');
 
 		var that = App.MapController;
-		d3.json('sample.json', function(data){
+		d3.json('/json/stationData', function(data){
 			that.set('stations', data);
 		});
 	},
@@ -125,7 +119,7 @@ App.MapController = Em.Object.create({
 		console.log('drawing stations...');
 
 		var overlay = this.get('overlay'), // todo: how come "this" doesn't work?
-			data = this.get('stations').stationBeanList;
+			data = this.get('stations').results;
 
 		// add container when overlay is added to map
 		overlay.onAdd = function(){
@@ -327,12 +321,12 @@ App.MapView = Em.View.extend({
 
 App.SidebarView = Em.View.extend({
 	templateName: 'sidebarView',
-	execTimeBinding: 'App.MapController.stations.executionTime',
+	lastUpdateBinding: 'App.MapController.stations.lastUpdate',
 	updated: function(){
-		if(this.get('execTime') !== null){
-			return moment(this.get('execTime'), 'YYYY-MM-DD HH:mm:ss Z').fromNow();
+		if(this.get('lastUpdate') !== null){
+			return moment(this.get('execTime')).fromNow();
 		}
-	}.property('execTime')
+	}.property('lastUpdate')
 });
 
 App.FormView = Em.View.extend({

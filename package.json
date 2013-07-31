@@ -11,6 +11,7 @@
     "mongodb": "*",
     "grunt": "~0.4.1",
     "grunt-ember-templates": "0.4.6",
-    "grunt-contrib-jshint": "*"
+    "grunt-contrib-jshint": "*",
+    "citibike": "2.2.3"
   }
 }
