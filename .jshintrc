@@ -1,0 +1,26 @@
+{
+    "node": true,
+    "browser": true,
+    "esnext": true,
+    "globals": {
+	"$": false,
+        "jQuery": false,
+    	"console": false,
+	"d3": false,
+	"google": false,
+	"Em": false
+    },	
+    "bitwise": false,
+    "curly": false,
+    "eqeqeq": true,
+    "eqnull": true,
+    "immed": true,
+    "newcap": true,
+    "noarg": true,
+    "undef": true,
+    "strict": false,
+    "trailing": true,
+    "smarttabs": true,
+    "quotmark": false,
+    "expr": true
+}

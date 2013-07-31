@@ -1,14 +1,2 @@
-<div id="map">
-	<div id="map-canvas"></div>
-</div>
-	
-<div id="key">
-	<div class="content">
-		<p>Where do you want to go?</p>
-		<p>from</p>
-		<div class="input"><span class="label">A</span><input id="origin" type="text" placeholder="address or location"></div>
-		<p>to</p>
-		<div class="input"><span class="label">B</span><input id="destination" type="text" placeholder="address or location"></div>
-		<input type="button" class="btn-primary" value="plot" onclick="setDestination()">
-	</div>
-</div>
+<div id="map">{{view App.MapView}}</div>
+<div id="key">{{view App.SidebarView}}</div>
