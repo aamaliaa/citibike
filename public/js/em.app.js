@@ -65,13 +65,32 @@ App.MapController = Em.Object.create({
 		);
 	},
 	setOrigin: function(origin){
-		var self = this;
+		var self = this,
+			geocodeSettings,
+			num;
 
-		self.geocoder.geocode({
-			'latLng': origin,
-		}, function(results, status){
-			self.set('origin.object', results[1].formatted_address);
-			self.set('origin.latLng', results[1].geometry.location);
+		// switches geocoder settings depending on origin input type
+		if(origin.jb !== undefined){
+			geocodeSettings = {
+				'latLng': origin
+			};
+			num = 1;
+		} else{
+			geocodeSettings = {
+				'address': origin,
+				'bounds': self.get('nycBounds'),
+				'region': 'US'
+			};
+			num = 0;
+		}
+
+		self.geocoder.geocode(geocodeSettings, function(results, status){
+			if(status === google.maps.GeocoderStatus.OK){
+				self.set('origin.object', results[num].formatted_address);
+				self.set('origin.latLng', results[num].geometry.location);
+			}else{
+				console.log('Geocode unsuccessful because: '+status);
+			}
 		});
 	},
 	setDestination: function(){
@@ -323,6 +342,15 @@ App.FormView = Em.View.extend({
 	submit: function(e){
 		e.preventDefault();
 		App.MapController.setDestination();
+	}
+});
+
+App.OriginField = Em.TextField.extend({
+	originBinding: 'App.MapController.origin.object',
+	focusOut: function(){
+		if(this.get('origin') !== undefined){
+			App.MapController.setOrigin(this.get('origin'));
+		}
 	}
 });
 

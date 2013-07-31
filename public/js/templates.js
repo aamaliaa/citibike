@@ -38,7 +38,7 @@ function program1(depth0,data) {
   data.buffer.push("\n	<div class=\"input\">\n		<span class=\"label\">A</span>\n		");
   hashContexts = {'id': depth0,'valueBinding': depth0,'placeholder': depth0};
   hashTypes = {'id': "STRING",'valueBinding': "STRING",'placeholder': "STRING"};
-  data.buffer.push(escapeExpression(helpers.view.call(depth0, "Em.TextField", {hash:{
+  data.buffer.push(escapeExpression(helpers.view.call(depth0, "App.OriginField", {hash:{
     'id': ("origin"),
     'valueBinding': ("view.origin"),
     'placeholder': ("address or location")
