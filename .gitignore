@@ -2,4 +2,5 @@
 .sass-cache
 .sass-cache/*
 stationData
+node_modules
 .DS_Store
