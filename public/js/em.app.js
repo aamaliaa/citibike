@@ -158,13 +158,13 @@ App.MapController = Em.Object.create({
 					delayOut: 700,
 					title: function(){
 						var d = this.__data__;
-						return "<div class=\"stationBubble\"><h4>"+d.value.stationName+"</h4><p><dl><dt>status</dt><dd>"+d.value.statusValue+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd><dt>total docks</dt><dd>"+d.value.totalDocks+"</dd></dl></p></div>";
+						return "<div class=\"stationBubble\"><h4>"+d.value.label+"</h4><p><dl><dt>status</dt><dd>"+d.value.status+"</dd><dt>available bikes</dt><dd>"+d.value.availableBikes+"</dd><dt>available docks</dt><dd>"+d.value.availableDocks+"</dd></dl></p></div>";
 					}
 				});
 
 				function transform(d){
 					if(d.value !== undefined){
-						if(d.value.statusValue !== 'Planned' && d.value.statusValue !== 'Not In Service'){
+						if(d.value.status !== 'Planned' && d.value.status !== 'Not In Service'){
 							d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
 							d = projection.fromLatLngToDivPixel(d);
 							return d3.select(this)
@@ -189,7 +189,7 @@ App.MapController = Em.Object.create({
 			var ratio = d.value.availableBikes;
 
 			// remove NaN, prevent weird floaty markers
-			if(isNaN(ratio) || d.value.stationValue === 'Planned' || d.value.stationValue === 'Not In Service'){
+			if(isNaN(ratio) || d.value.station === 'Planned' || d.value.station === 'Not In Service'){
 				d3.select(this).remove();
 			} else{
 
