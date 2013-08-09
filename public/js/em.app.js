@@ -64,7 +64,7 @@ App.MapController = Em.Object.create({
 			num;
 
 		// switches geocoder settings depending on origin input type
-		if(origin.jb !== undefined){
+		if(origin.lb !== undefined){
 			geocodeSettings = {
 				'latLng': origin
 			};
@@ -118,8 +118,15 @@ App.MapController = Em.Object.create({
 	drawStations: function(){
 		console.log('drawing stations...');
 
-		var overlay = this.get('overlay'), // todo: how come "this" doesn't work?
+		var overlay = this.get('overlay'),
 			data = this.get('stations').results;
+
+	// TODO: CLEAN THIS UP
+		overlay.setMap(null);
+		
+		$('svg circle').remove();
+
+		overlay = new google.maps.OverlayView();
 
 		// add container when overlay is added to map
 		overlay.onAdd = function(){
@@ -153,7 +160,7 @@ App.MapController = Em.Object.create({
 					html: true,
 					fade: true,
 					opacity: 0.9,
-					offset: 10, // todo: calculate this depending on radius
+					offset: padding, // todo: calculate this depending on radius
 					delayIn: 400,
 					delayOut: 700,
 					title: function(){
@@ -162,11 +169,31 @@ App.MapController = Em.Object.create({
 					}
 				});
 
+				var mouseOn = function(){
+					var circle = d3.select(this);
+
+					circle.transition()
+						.duration(800);
+						// do something
+				}
+
+				var mouseOff = function(){
+					var circle = d3.select(this);
+
+					circle.transition()
+						.duration(800);
+						// make it go back
+				}
+
+				$('svg circle').on("mouseover", mouseOn);
+				$('svg circle').on("mouseout", mouseOff);
+
 				function transform(d){
 					if(d.value !== undefined){
 						if(d.value.status !== 'Planned' && d.value.status !== 'Not In Service'){
 							d = new google.maps.LatLng(d.value.latitude, d.value.longitude);
 							d = projection.fromLatLngToDivPixel(d);
+
 							return d3.select(this)
 								.style("left", (d.x - padding) + "px")
 								.style("top", (d.y - padding) + "px");
@@ -177,11 +204,24 @@ App.MapController = Em.Object.create({
 						return false;
 					}
 				}
+
 			};
 		};
 
 		// bind overlay to map
 		overlay.setMap(App.MapController.get('gMap'));
+	},
+	setRadius: function(d){
+		if(d.value !== undefined || /^\d*$/i.test(d.key)){
+			var ratio = d.value.availableBikes;
+
+			if(ratio < 4.5) ratio = 4.5;
+			if(ratio > 9) ratio = 9;
+
+			return d3.select(this).attr('r', ratio);
+		} else{
+			return false;
+		}
 	},
 	getStationCapacity: function(d){
 		if(d.value !== undefined || /^\d*$/i.test(d.key)){
@@ -220,8 +260,8 @@ App.MapController = Em.Object.create({
 		// iterate thru all stations and find closest to origin/destination
 		$.each(self.get('stations').results, function(){
 
-			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.jb, origin.kb);
-			this.distDest = self.getDistance(this.latitude, this.longitude, destination.jb, destination.kb);
+			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.lb, origin.mb);
+			this.distDest = self.getDistance(this.latitude, this.longitude, destination.lb, destination.mb);
 
 			if(self.get('origin.closestStation') === null){
 				self.set('origin.closestStation', this);
@@ -322,7 +362,7 @@ App.MapView = Em.View.extend({
 App.SidebarView = Em.View.extend({
 	templateName: 'sidebarView',
 	lastUpdateBinding: 'App.MapController.stations.lastUpdate',
-	updated: function(){
+	updated: function(){ // TODO http://jgwhite.co.uk/2013/06/08/ember-time.html
 		if(this.get('lastUpdate') !== null){
 			return moment(this.get('execTime')).fromNow();
 		}
