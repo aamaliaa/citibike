@@ -7,22 +7,31 @@ var express = require('express'),
 	routes = require('./routes'),
 	hbs = require('hbs'),
 	http = require('http'),
+	app = express(),
+	server = http.createServer(app),
+	io = require('socket.io').listen(server),
 	path = require('path'),
-	Citibike = require('citibike'),
-	citibike = new Citibike,
+	fn = require('./functions'),
 	citidata = {};
 
 // GRAB DATA
-
-setInterval(function(){
-	citibike.getStations(null, function(data){
-		console.log("Getting Citibike stations...");
+io.sockets.on('connection', function(socket) {	
+	fn.getStations(function(data){
 		citidata.stations = data;
+		socket.volatile.emit('update', citidata.stations);
 	});
-}, 60000);
 
+	var stations = setInterval(function() {
+		fn.getStations(function(data){
+			citidata.stations = data;
+			socket.volatile.emit('update', citidata.stations);
+		});
+	}, 60000);
 
-var app = express();
+	socket.on('disconnect', function () {
+		clearInterval(stations);
+	});
+});
 
 app.configure(function(){
 	app.set('port', process.env.PORT || 3002);
@@ -57,6 +66,6 @@ app.get('/json/stationData', function(req, res){
 	res.json(data);
 });
  
-http.createServer(app).listen(app.get('port'), function(){
+server.listen(app.get('port'), function(){
 	console.log("Express server listening on port " + app.get('port'));
 });

@@ -3,6 +3,14 @@ var App = Em.Application.create({
 	LOG_TRANSITIONS: true
 });
 
+var socket = io.connect('/');
+socket.on('update', function(data){
+	if(App.MapController.get('lastUpdate') !== data.lastUpdate){
+		console.log('updating stations...');
+		App.MapController.set('stations', data);
+	}
+});
+
 App.ApplicationView = Em.View.extend({
 	templateName: 'appView',
 	elementId: 'app'
@@ -105,14 +113,6 @@ App.MapController = Em.Object.create({
 			} else{
 				console.log('Geocode unsuccessful because: '+status);
 			}
-		});
-	},
-	getStations: function(){
-		console.log('getting stations...');
-
-		var that = App.MapController;
-		d3.json('/json/stationData', function(data){
-			that.set('stations', data);
 		});
 	},
 	drawStations: function(){
@@ -343,8 +343,6 @@ App.MapView = Em.View.extend({
 		App.MapController.get('bikeLayer').setMap(App.MapController.get('gMap'));
 		App.MapController.get('directionsRenderer').setMap(App.MapController.get('gMap'));
 
-		// getStations when map is loaded
-		google.maps.event.addListenerOnce(App.MapController.get('gMap'), 'tilesloaded', App.MapController.getStations);
 	},
 	drawStations: function(){
 		// observes 'stations' and redraws overlay on map when they change
@@ -364,7 +362,7 @@ App.SidebarView = Em.View.extend({
 	lastUpdateBinding: 'App.MapController.stations.lastUpdate',
 	updated: function(){ // TODO http://jgwhite.co.uk/2013/06/08/ember-time.html
 		if(this.get('lastUpdate') !== null){
-			return moment(this.get('execTime')).fromNow();
+			return moment().max(moment.unix(this.get('lastUpdate'))).fromNow();
 		}
 	}.property('lastUpdate')
 });
