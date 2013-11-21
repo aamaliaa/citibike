@@ -56,7 +56,7 @@ App.MapController = Em.Object.create({
 		this.set('origin.object', navigator.geolocation.getCurrentPosition(
 			function(position){
 				var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-				App.MapController.setOrigin(point.toString());
+				App.MapController.setOrigin(point);
 
 				return point;
 			}, function(){
@@ -67,28 +67,18 @@ App.MapController = Em.Object.create({
 	},
 	setOrigin: function(origin){
 		var self = this,
-			geocodeSettings,
-			num;
+			geocodeSettings;
 
-		// switches geocoder settings depending on origin input type
-		if(origin.lb !== undefined){
-			geocodeSettings = {
-				'latLng': origin
-			};
-			num = 1;
-		} else{
-			geocodeSettings = {
-				'address': origin,
-				'bounds': self.get('nycBounds'),
-				'region': 'US'
-			};
-			num = 0;
-		}
+		geocodeSettings = {
+			'address': origin.toString(),
+			'bounds': self.get('nycBounds'),
+			'region': 'US'
+		};
 
 		self.geocoder.geocode(geocodeSettings, function(results, status){
 			if(status === google.maps.GeocoderStatus.OK){
-				self.set('origin.object', results[num].formatted_address);
-				self.set('origin.latLng', results[num].geometry.location);
+				self.set('origin.object', results[0].formatted_address);
+				self.set('origin.latLng', results[0].geometry.location);
 			}else{
 				console.log('Geocode unsuccessful because: '+status);
 			}
@@ -259,8 +249,8 @@ App.MapController = Em.Object.create({
 		// iterate thru all stations and find closest to origin/destination
 		$.each(self.get('stations').results, function(){
 
-			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.lb, origin.mb);
-			this.distDest = self.getDistance(this.latitude, this.longitude, destination.lb, destination.mb);
+			this.distOrigin = self.getDistance(this.latitude, this.longitude, origin.lat(), origin.lng());
+			this.distDest = self.getDistance(this.latitude, this.longitude, destination.lat(), destination.lng());
 
 			if(self.get('origin.closestStation') === null){
 				self.set('origin.closestStation', this);
@@ -289,6 +279,8 @@ App.MapController = Em.Object.create({
 		self.get('directionsService').route(request, function(response, status){
 			if(status === google.maps.DirectionsStatus.OK){
 				self.get('directionsRenderer').setDirections(response);
+			} else {
+				console.log(status);
 			}
 		});
 	},
