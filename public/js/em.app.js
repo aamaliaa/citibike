@@ -56,8 +56,7 @@ App.MapController = Em.Object.create({
 		this.set('origin.object', navigator.geolocation.getCurrentPosition(
 			function(position){
 				var point = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
-
-				App.MapController.setOrigin(point);
+				App.MapController.setOrigin(point.toString());
 
 				return point;
 			}, function(){
