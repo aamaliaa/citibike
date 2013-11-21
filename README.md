@@ -3,7 +3,7 @@ citibike
 
 Currently a simple experiment with Ember.js and the Citibike API's single JSON file of station data.
 
-A working example can be found here: [av-citibike.herokuapp.com](http://av-citibike.herokuapp.com/)
+A working example can be found here: [citibike.amaliaviti.com](http://citibike.amaliaviti.com/)
 
 It takes an origin and a destination, finds the closest stations to each, and plots bicycle directions between the two stations.
 
