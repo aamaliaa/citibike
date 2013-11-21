@@ -15,6 +15,11 @@ var express = require('express'),
 	citidata = {};
 
 // GRAB DATA
+io.configure(function () { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});
+
 io.sockets.on('connection', function(socket) {	
 	fn.getStations(function(data){
 		citidata.stations = data;
