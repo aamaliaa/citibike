@@ -351,11 +351,20 @@ App.MapView = Em.View.extend({
 App.SidebarView = Em.View.extend({
 	templateName: 'sidebarView',
 	lastUpdateBinding: 'App.MapController.stations.lastUpdate',
+	didInsertElement: function() {
+		this.tick();
+	},
 	updated: function(){ // TODO http://jgwhite.co.uk/2013/06/08/ember-time.html
 		if(this.get('lastUpdate') !== null){
 			return moment().max(moment.unix(this.get('lastUpdate'))).fromNow();
 		}
-	}.property('lastUpdate')
+	}.property('lastUpdate'),
+	tick: function() {
+		Em.run.later(this, function() {
+			this.notifyPropertyChange('lastUpdate')
+			this.tick();
+		}, 1000);
+	}
 });
 
 App.FormView = Em.View.extend({
