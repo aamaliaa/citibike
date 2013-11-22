@@ -12,6 +12,6 @@
     "grunt-ember-templates": "0.4.6",
     "grunt-contrib-jshint": "*",
     "citibike": "2.2.3",
-    "socket.io": "~0.9.16"
+    "ws": "~0.4.31"
   }
 }

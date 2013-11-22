@@ -3,13 +3,15 @@ var App = Em.Application.create({
 	LOG_TRANSITIONS: true
 });
 
-var socket = io.connect('/');
-socket.on('update', function(data){
+var host = location.origin.replace(/^http/, 'ws')
+var ws = new WebSocket(host);
+ws.onmessage = function (event) {
+	var data = JSON.parse(event.data);
 	if(App.MapController.get('lastUpdate') !== data.lastUpdate){
 		console.log('updating stations...');
 		App.MapController.set('stations', data);
 	}
-});
+};
 
 App.ApplicationView = Em.View.extend({
 	templateName: 'appView',

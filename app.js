@@ -9,34 +9,9 @@ var express = require('express'),
 	http = require('http'),
 	app = express(),
 	server = http.createServer(app),
-	io = require('socket.io').listen(server),
 	path = require('path'),
 	fn = require('./functions'),
 	citidata = {};
-
-// GRAB DATA
-io.configure(function () { 
-  io.set("transports", ["xhr-polling"]); 
-  io.set("polling duration", 10); 
-});
-
-io.sockets.on('connection', function(socket) {	
-	fn.getStations(function(data){
-		citidata.stations = data;
-		socket.volatile.emit('update', citidata.stations);
-	});
-
-	var stations = setInterval(function() {
-		fn.getStations(function(data){
-			citidata.stations = data;
-			socket.volatile.emit('update', citidata.stations);
-		});
-	}, 60000);
-
-	socket.on('disconnect', function () {
-		clearInterval(stations);
-	});
-});
 
 app.configure(function(){
 	app.set('port', process.env.PORT || 3002);
@@ -73,4 +48,22 @@ app.get('/json/stationData', function(req, res){
  
 server.listen(app.get('port'), function(){
 	console.log("Express server listening on port " + app.get('port'));
+});
+
+var WebSocketServer = require('ws').Server,
+	wss = new WebSocketServer({server: server});
+
+// GRAB DATA
+wss.on('connection', function(ws) {
+	fn.getStations(function(data){
+		citidata.stations = data;
+		ws.send(JSON.stringify(citidata.stations));
+	});
+
+	var stations = setInterval(function() {
+		fn.getStations(function(data){
+			citidata.stations = data;
+			ws.send(JSON.stringify(citidata.stations));
+		});
+	}, 60000);
 });
